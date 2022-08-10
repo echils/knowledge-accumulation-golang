@@ -9,7 +9,20 @@ func init() {
 
 func main() {
 
-	var content = "I am a developer"
-	fmt.Println(content)
+	var a = 1
+	b := 5
 
+	fmt.Print(add(a, b))
+
+}
+
+func add(param ...int) int {
+	if len(param) == 0 {
+		return 0
+	}
+	result := 0
+	for i := range param {
+		result += param[i]
+	}
+	return result
 }
