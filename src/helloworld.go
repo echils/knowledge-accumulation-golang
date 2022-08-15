@@ -64,6 +64,10 @@ func main() {
 		fmt.Printf("index:%v,value:%s\n", i, s)
 	}
 	fmt.Println("========================")
+	//数组转为切片
+	content = project[:]
+	fmt.Println(content)
+	fmt.Println("========================")
 
 	//定义Map
 	languageMap := make(map[int]string)
@@ -80,7 +84,6 @@ func main() {
 	for i, s := range languageMap {
 		fmt.Printf("index:%v,value:%s\n", i, s)
 	}
-	fmt.Println()
 	fmt.Println("========================")
 }
 
