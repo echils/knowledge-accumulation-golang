@@ -1,8 +1,13 @@
 server:
   port: 8281
+  profile: release
+
+log:
+  level: info
+  file: /home/echils/Downloads/golang.log
   
 mysql:
-  url: tcp(localhost:3306)/workspace?charset=utf8mb4&parseTime=True&loc=Local"
+  url: tcp(localhost:3306)/workspace?charset=utf8mb4&parseTime=true
   username: root 
   password: 123456
 
@@ -12,6 +17,6 @@ redis:
 
 minio:
   host: 172.31.249.3
-  port: 48103
+  port: 48903
   username: root
   password: v@aseit.0N9B
