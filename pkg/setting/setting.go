@@ -74,6 +74,7 @@ func Bootstrap(path string) (s bool, e Env) {
 
 // 连接MySQL
 func connectMysql(mysql MySQL) {
+	
 }
 
 // 连接Redis
