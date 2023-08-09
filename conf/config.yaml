@@ -1,10 +1,11 @@
 server:
-  port: 8281
+  name: golang
+  port: 8080
   profile: release
 
 log:
-  level: info
-  file: /home/echils/Downloads/golang.log
+  level: 5
+  file: /log
   
 mysql:
   url: tcp(localhost:3306)/workspace?charset=utf8mb4&parseTime=true
@@ -15,8 +16,3 @@ redis:
   host: localhost
   port: 6379
 
-minio:
-  host: 172.31.249.3
-  port: 48903
-  username: root
-  password: v@aseit.0N9B
