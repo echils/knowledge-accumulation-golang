@@ -6,8 +6,8 @@ import (
 	"web/env"
 )
 
-// 环境变量相对路径
-const defaultConfigFile = "./conf/config.yaml"
+// 配置文件默认路径
+const defaultConfigFile = "./config/application.yaml"
 
 func main() {
 
@@ -22,4 +22,5 @@ func main() {
 
 	//启动服务
 	env.Run(configFile)
+
 }

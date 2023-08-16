@@ -8,7 +8,6 @@ import (
 	"path"
 	"strconv"
 	"time"
-	"web/controller"
 	"web/model"
 
 	"github.com/gin-gonic/gin"
@@ -24,6 +23,7 @@ import (
 var (
 	Env     Config
 	MysqlDB *gorm.DB
+	Gin     *gin.Engine
 	RedisDB *redis.Client
 )
 
@@ -73,33 +73,33 @@ type Redis struct {
 func Run(configFile string) {
 
 	//项目环境配置引导
-	b := bootstrap(configFile)
-	if !b {
+	success := bootstrap(configFile)
+	if !success {
 		panic("Panic error when bootstrap")
 	}
 
 	//启动Gin
 	gin.ForceConsoleColor()
 	gin.SetMode(Env.Server.Profile)
-	e := gin.Default()
-	e.Use(loggerToFile(), globalException())
+	Gin = gin.Default()
+	Gin.Use(loggerToFile(), globalException())
 
 	//路由映射
-	loadRoutes(e)
+	loadRoutes(Gin)
 
+	//启动服务
 	if Env.Server.Port != 0 {
 		log.Printf("Started application with profile [%s] and port [%d] \n", Env.Server.Profile, Env.Server.Port)
-		e.Run(":" + strconv.Itoa(Env.Server.Port))
+		Gin.Run(":" + strconv.Itoa(Env.Server.Port))
 	} else {
 		log.Printf("Started application with profile [%s] and port [8080]", Env.Server.Profile)
-		e.Run()
+		Gin.Run()
 	}
-
 }
 
 // 加载路由
 func loadRoutes(e *gin.Engine) {
-	controller.RegisterUserControllerRoute(e)
+	// controller.RegisterUserControllerRoute(e)
 }
 
 // 全局异常处理
@@ -126,9 +126,18 @@ func bootstrap(path string) (s bool) {
 	}
 
 	//连接MySQL
-	connectMysql(Env.MySQL)
+	err = connectMysql(Env.MySQL)
+	if err != nil {
+		log.Println(fmt.Errorf("fatal error when connect mysql: %w", err))
+		return false
+	}
+
 	//连接Redis
-	connectRedis(Env.Redis)
+	err = connectRedis(Env.Redis)
+	if err != nil {
+		log.Println(fmt.Errorf("fatal error when connect redis: %w", err))
+		return false
+	}
 
 	return true
 }
@@ -154,23 +163,25 @@ func loadConfigFile(path string) (e error) {
 }
 
 // 连接MySQL
-func connectMysql(config MySQL) {
+func connectMysql(config MySQL) (e error) {
 	dsn := fmt.Sprintf("%s:%s@%s", config.Username, config.Password, config.Url)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("Failed to connect database: " + err.Error())
+		return errors.New("Failed to connect database: " + err.Error())
 	}
 	MysqlDB = db
+	return nil
 }
 
 // 连接Redis
-func connectRedis(config Redis) {
+func connectRedis(config Redis) (e error) {
 	RedisDB = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", config.Host, config.Port),
 		Username: config.Username,
 		Password: config.Password,
 		DB:       config.Database,
 	})
+	return nil
 }
 
 // 日志配置
@@ -227,4 +238,5 @@ func loggerToFile() gin.HandlerFunc {
 			"req_uri":      reqUri,
 		}).Info()
 	}
+
 }
