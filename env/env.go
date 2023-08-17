@@ -1,6 +1,7 @@
 package env
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -128,5 +129,9 @@ func connectRedis(config Redis) (e error) {
 		Password: config.Password,
 		DB:       config.Database,
 	})
+	_, err := RedisDB.Ping(context.Background()).Result()
+	if err != nil {
+		return errors.New("Redis connect error" + err.Error())
+	}
 	return nil
 }

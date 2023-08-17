@@ -1,7 +1,9 @@
 package service
 
 import (
+	"context"
 	"web/dao"
+	"web/env"
 	"web/model"
 )
 
@@ -15,6 +17,7 @@ func CreateUser(user *model.User) {
 		panic("用户未满18岁")
 	}
 	dao.InsertUser(user)
+	env.RedisDB.HMSet(context.Background(), "user", user.Id, user.Name)
 }
 
 // 更新用户
@@ -30,11 +33,13 @@ func UpdateUser(id string, user *model.User) {
 	}
 	dataUser.Age = user.Age
 	dao.UpdateUser(&dataUser)
+	env.RedisDB.HMSet(context.Background(), "user", user.Id, user.Name)
 }
 
 // 删除用户
 func DeleteUser(id string) {
 	dao.DeleteUser(id)
+	env.RedisDB.HDel(context.Background(), "user", id)
 
 }
 
