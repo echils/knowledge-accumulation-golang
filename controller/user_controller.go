@@ -11,9 +11,9 @@ import (
 func RegisterUserControllerRoute(e *gin.Engine) {
 	group := e.Group("/user")
 	group.POST("/create", CreateUser)
-	group.PUT("/{id}/update", UpdateUser)
-	group.DELETE("/{id}/delete", DeleteUser)
-	group.GET("/select", SelectUser)
+	group.PUT("/:id/update", UpdateUser)
+	group.DELETE("/:id/delete", DeleteUser)
+	group.GET("/list", SelectUser)
 }
 
 // 创建用户
@@ -21,6 +21,7 @@ func CreateUser(c *gin.Context) {
 	var param model.User
 	c.BindJSON(&param)
 	service.CreateUser(&param)
+	model.InsertSuccess(c, nil)
 }
 
 // 更新用户
@@ -33,6 +34,7 @@ func UpdateUser(c *gin.Context) {
 	var param model.User
 	c.BindJSON(&param)
 	service.UpdateUser(id, &param)
+	model.UpdateSuccess(c, nil)
 }
 
 // 删除用户
@@ -43,9 +45,12 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 	service.DeleteUser(id)
+	model.DeleteSuccess(c, nil)
 }
 
 // 查询用户
 func SelectUser(c *gin.Context) {
-
+	var param model.User
+	c.BindJSON(&param)
+	model.Success(c, service.FindUserByNameLike(param.Name))
 }

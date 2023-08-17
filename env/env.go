@@ -5,23 +5,16 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
-	"strconv"
-	"time"
-	"web/model"
 
 	"github.com/gin-gonic/gin"
-	rotateLogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/redis/go-redis/v9"
-	"github.com/rifflock/lfshook"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 var (
-	Env     Config
 	MysqlDB *gorm.DB
 	Gin     *gin.Engine
 	RedisDB *redis.Client
@@ -70,80 +63,30 @@ type Redis struct {
 }
 
 // 启动Web服务
-func Run(configFile string) {
+func Bootstrap(configFile string) (config Config) {
 
 	//项目环境配置引导
-	success := bootstrap(configFile)
-	if !success {
-		panic("Panic error when bootstrap")
-	}
-
-	//启动Gin
-	gin.ForceConsoleColor()
-	gin.SetMode(Env.Server.Profile)
-	Gin = gin.Default()
-	Gin.Use(loggerToFile(), globalException())
-
-	//路由映射
-	loadRoutes(Gin)
-
-	//启动服务
-	if Env.Server.Port != 0 {
-		log.Printf("Started application with profile [%s] and port [%d] \n", Env.Server.Profile, Env.Server.Port)
-		Gin.Run(":" + strconv.Itoa(Env.Server.Port))
-	} else {
-		log.Printf("Started application with profile [%s] and port [8080]", Env.Server.Profile)
-		Gin.Run()
-	}
-}
-
-// 加载路由
-func loadRoutes(e *gin.Engine) {
-	// controller.RegisterUserControllerRoute(e)
-}
-
-// 全局异常处理
-func globalException() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		defer func() {
-			if err := recover(); err != nil {
-				model.Failed(c, "系统响应异常")
-				return
-			}
-		}()
-		c.Next()
-	}
-}
-
-// 配置环境引导
-func bootstrap(path string) (s bool) {
-
-	//加载配置文件
-	err := loadConfigFile(path)
+	env, err := loadConfigFile(configFile)
 	if err != nil {
-		log.Println(fmt.Errorf("fatal error when load config file: %w", err))
-		return false
+		panic(fmt.Errorf("fatal error when load config file: %w", err))
 	}
 
 	//连接MySQL
-	err = connectMysql(Env.MySQL)
+	err = connectMysql(env.MySQL)
 	if err != nil {
-		log.Println(fmt.Errorf("fatal error when connect mysql: %w", err))
-		return false
+		panic(fmt.Errorf("fatal error when connect mysql: %w", err))
 	}
 
 	//连接Redis
-	err = connectRedis(Env.Redis)
+	err = connectRedis(env.Redis)
 	if err != nil {
-		log.Println(fmt.Errorf("fatal error when connect redis: %w", err))
-		return false
+		panic(fmt.Errorf("fatal error when connect redis: %w", err))
 	}
-
-	return true
+	return env
 }
 
 // 加载配置文件
-func loadConfigFile(path string) (e error) {
+func loadConfigFile(path string) (config Config, e error) {
 	defer func() {
 		if err := recover(); err != nil {
 			e = errors.New(fmt.Sprint(err))
@@ -152,20 +95,24 @@ func loadConfigFile(path string) (e error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalln("OS read config file failed: ", path)
-		return err
+		return config, err
 	}
-	err2 := yaml.Unmarshal(b, &Env)
+	err2 := yaml.Unmarshal(b, &config)
 	if err2 != nil {
 		log.Fatalln("Yaml unmarshal config file failed: ", path)
-		return err2
+		return config, err2
 	}
-	return nil
+	return config, nil
 }
 
 // 连接MySQL
 func connectMysql(config MySQL) (e error) {
 	dsn := fmt.Sprintf("%s:%s@%s", config.Username, config.Password, config.Url)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			SingularTable: true,
+		},
+	})
 	if err != nil {
 		return errors.New("Failed to connect database: " + err.Error())
 	}
@@ -182,61 +129,4 @@ func connectRedis(config Redis) (e error) {
 		DB:       config.Database,
 	})
 	return nil
-}
-
-// 日志配置
-func loggerToFile() gin.HandlerFunc {
-
-	logger := logrus.New()
-	logName := Env.Server.Name + ".log"
-	fileName := path.Join(Env.Log.LogFile, logName)
-	src, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
-	if err != nil {
-		panic("Log open file error: " + err.Error())
-	}
-	logger.Out = src
-	logger.SetLevel(logrus.Level(Env.Log.Level))
-
-	logWriter, err := rotateLogs.New(
-		fileName+".%Y%m%d.log",
-		rotateLogs.WithLinkName(fileName),
-		rotateLogs.WithMaxAge(7*24*time.Hour),
-		rotateLogs.WithRotationTime(24*time.Hour),
-	)
-	if err != nil {
-		panic("Log rotate config error: " + err.Error())
-	}
-
-	writeMap := lfshook.WriterMap{
-		logrus.InfoLevel:  logWriter,
-		logrus.FatalLevel: logWriter,
-		logrus.DebugLevel: logWriter,
-		logrus.WarnLevel:  logWriter,
-		logrus.ErrorLevel: logWriter,
-		logrus.PanicLevel: logWriter,
-	}
-
-	hook := lfshook.NewHook(writeMap, &logrus.JSONFormatter{
-		TimestampFormat: "2006-01-02 15:04:05",
-	})
-	logger.AddHook(hook)
-
-	return func(c *gin.Context) {
-		startTime := time.Now()
-		c.Next()
-		endTime := time.Now()
-		consume := endTime.Sub(startTime)
-		reqMethod := c.Request.Method
-		reqUri := c.Request.RequestURI
-		statusCode := c.Writer.Status()
-		clientIP := c.ClientIP()
-		logger.WithFields(logrus.Fields{
-			"status_code":  statusCode,
-			"latency_time": consume,
-			"client_ip":    clientIP,
-			"req_method":   reqMethod,
-			"req_uri":      reqUri,
-		}).Info()
-	}
-
 }
