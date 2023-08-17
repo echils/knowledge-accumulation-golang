@@ -12,6 +12,7 @@
 
 ****
 
-**GO:** [【***官方文档***】](https://gin-gonic.com/zh-cn/docs/)
-**GIN** [【***官方文档***】](https://gin-gonic.com/zh-cn/docs/)
-**GORM** [【***官方文档***】](https://gorm.io/zh_CN/docs/)
+**Go:** [【***官方文档***】](https://studygolang.com/pkgdoc)
+**Gin** [【***官方文档***】](https://gin-gonic.com/zh-cn/docs/)
+**Gorm** [【***官方文档***】](https://gorm.io/zh_CN/docs/)
+**Redis** [【***官方文档***】](https://redis.uptrace.dev/zh/guide/)
