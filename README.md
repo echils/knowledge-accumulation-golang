@@ -16,3 +16,4 @@
 **Gin** [【***官方文档***】](https://gin-gonic.com/zh-cn/docs/)
 **Gorm** [【***官方文档***】](https://gorm.io/zh_CN/docs/)
 **Redis** [【***官方文档***】](https://redis.uptrace.dev/zh/guide/)
+**Logrus** [【***官方文档***】](https://pkg.go.dev/github.com/sirupsen/logrus#section-readme)
