@@ -1,6 +1,6 @@
 server:
   name: hello-world
-  port: 8080
+  port: 8081
   profile: release
 
 log:
@@ -8,11 +8,11 @@ log:
   file: /log
   
 mysql:
-  url: tcp(localhost:3306)/workspace?charset=utf8mb4&parseTime=True&loc=Local
+  url: tcp(127.0.0.1:3306)/workspace?charset=utf8mb4&parseTime=True&loc=Local
   username: root 
   password: 123456
 
 redis:
-  host: localhost
+  host: 127.0.0.1
   port: 6379
 

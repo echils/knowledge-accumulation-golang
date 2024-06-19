@@ -36,6 +36,7 @@ func main() {
 
 	//启动服务
 	start(env)
+
 }
 
 func start(config env.Config) {
