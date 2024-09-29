@@ -1,8 +1,7 @@
 package model
 
-// 用户
-type User struct {
+// 部门
+type Department struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
-	Age  int    `json:"age"`
 }

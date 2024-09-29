@@ -1,0 +1,17 @@
+app:
+  name: golearn
+  port: 8081
+
+log:
+  dir: /log
+  level: 5
+ 
+mysql:
+  url:
+  username: root
+  password: 123456
+
+redis:
+  host: 127.0.0.1
+  port: 6379
+  
