@@ -1,13 +1,14 @@
-app:
+server:
   name: golearn
   port: 8081
+  mode: release
 
 log:
   dir: /log
   level: 5
  
 mysql:
-  url:
+  url: tcp(127.0.0.1:3306)/workspace?charset=utf8mb4&parseTime=True&loc=Local
   username: root
   password: 123456
 
