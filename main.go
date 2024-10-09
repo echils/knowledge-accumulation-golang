@@ -8,20 +8,27 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 func main() {
 	connections := readJSONFiles("/home/echils/.config/qv2ray/connections")
+	wg := sync.WaitGroup{}
+	wg.Add(len(connections))
 	for a, b := range connections {
-		domain := extractDomain(b)
-		if domain != "" {
-			ipv4 := resolveDomain(domain)
-			if domain != ipv4 {
-				b = strings.ReplaceAll(b, domain, ipv4)
-				os.WriteFile(a, []byte(b), 0644)
+		go func() {
+			domain := extractDomain(b)
+			if domain != "" {
+				ipv4 := resolveDomain(domain)
+				if domain != ipv4 {
+					b = strings.ReplaceAll(b, domain, ipv4)
+					os.WriteFile(a, []byte(b), 0644)
+				}
 			}
-		}
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 }
 
 // 读取指定目录下的所有json文件
