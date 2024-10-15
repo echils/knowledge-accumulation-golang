@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golearn/internal/app/route"
 	"golearn/internal/pkg/response"
 	"log"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	logConfig "github.com/lestrrat-go/file-rotatelogs"
+	logC "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/redis/go-redis/v9"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
@@ -68,14 +69,13 @@ func Run(path string) (config Config, err error) {
 	}
 
 	//路由映射
-	// loadRoutes(engine)
+	route.LoadRoutes(engine)
 
+	log.Printf("Start application with profile [%s] and port [%s] \n", config.Server.Mode, port)
 	err = server.ListenAndServe()
 	if err != nil {
-		panic(fmt.Errorf("fatal error when listen sever: %w", err))
+		panic(fmt.Errorf("start application occur error when listen sever: %v", err))
 	}
-	log.Printf("Started application with profile [%s] and port [%s] \n", config.Server.Mode, port)
-
 	return config, nil
 }
 
@@ -155,11 +155,11 @@ func loggerToFile(config Config) gin.HandlerFunc {
 	logger.Out = src
 	logger.SetLevel(logrus.Level(config.Log.Level))
 
-	logWriter, err := logConfig.New(
+	logWriter, err := logC.New(
 		fileName+".%Y%m%d.log",
-		logConfig.WithLinkName(fileName),
-		logConfig.WithMaxAge(7*24*time.Hour),
-		logConfig.WithRotationTime(24*time.Hour),
+		logC.WithLinkName(fileName),
+		logC.WithMaxAge(7*24*time.Hour),
+		logC.WithRotationTime(24*time.Hour),
 	)
 	if err != nil {
 		panic("Log rotate config error: " + err.Error())
