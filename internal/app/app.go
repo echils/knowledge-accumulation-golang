@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"golearn/internal/app/route"
+	"golearn/internal/app/controller"
+	"golearn/internal/app/env"
 	"golearn/internal/pkg/response"
 	"log"
 	"net/http"
@@ -24,12 +25,6 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-var (
-	MysqlDB *gorm.DB
-	Gin     *gin.Engine
-	RedisDB *redis.Client
-)
-
 // 启动服务
 func Run(path string) (config Config, err error) {
 
@@ -40,13 +35,13 @@ func Run(path string) (config Config, err error) {
 	}
 
 	//连接MySQL
-	MysqlDB, err = connectMysql(config.MySQL)
+	env.MysqlDB, err = connectMysql(config.MySQL)
 	if err != nil {
 		panic(fmt.Errorf("fatal error when connect mysql: %w", err))
 	}
 
 	//连接Redis
-	RedisDB, err = connectRedis(config.Redis)
+	env.RedisDB, err = connectRedis(config.Redis)
 	if err != nil {
 		panic(fmt.Errorf("fatal error when connect redis: %w", err))
 	}
@@ -58,6 +53,9 @@ func Run(path string) (config Config, err error) {
 	engine := gin.Default()
 	engine.Use(loggerToFile(config), globalException())
 
+	//加载路由
+	loadRouteConfig(engine)
+
 	port := "8000"
 	if config.Server.Port != 0 {
 		port = strconv.Itoa(config.Server.Port)
@@ -68,15 +66,21 @@ func Run(path string) (config Config, err error) {
 		Handler: engine,
 	}
 
-	//路由映射
-	route.LoadRoutes(engine)
-
 	log.Printf("Start application with profile [%s] and port [%s] \n", config.Server.Mode, port)
 	err = server.ListenAndServe()
 	if err != nil {
 		panic(fmt.Errorf("start application occur error when listen sever: %v", err))
 	}
 	return config, nil
+}
+
+// 加载路由
+func loadRouteConfig(e *gin.Engine) {
+	group := e.Group("/api/v1")
+	group.POST("/user/create", controller.CreateUser)
+	group.PUT("/user/:id/update", controller.UpdateUser)
+	group.DELETE("/user/:id/delete", controller.DeleteUser)
+	group.GET("/user/list", controller.SelectUser)
 }
 
 // 加载配置文件

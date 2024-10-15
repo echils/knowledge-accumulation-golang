@@ -9,6 +9,7 @@ import (
 // 配置文件默认路径
 const defaultConfigFile = "./configs/app.yaml"
 
+// GOLEARN
 func main() {
 
 	//加载配置文件

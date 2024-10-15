@@ -1,4 +1,4 @@
-package route
+package controller
 
 import (
 	"golearn/internal/app/service"
@@ -9,40 +9,40 @@ import (
 )
 
 // 创建用户
-func CreateUser(c *gin.Context) {
+func CreateUser(gin *gin.Context) {
 	var param model.User
-	c.BindJSON(&param)
+	gin.BindJSON(&param)
 	service.CreateUser(&param)
-	response.Success()
+	gin.JSON(200, response.Success())
 }
 
 // 更新用户
-func UpdateUser(c *gin.Context) {
-	id, ok := c.Params.Get("id")
+func UpdateUser(gin *gin.Context) {
+	id, ok := gin.Params.Get("id")
 	if !ok {
 		response.Failed(&response.INVALID_PARAM)
 		return
 	}
 	var param model.User
-	c.BindJSON(&param)
+	gin.BindJSON(&param)
 	service.UpdateUser(id, &param)
-	response.Success()
+	gin.JSON(200, response.Success())
 }
 
 // 删除用户
-func DeleteUser(c *gin.Context) {
-	id, ok := c.Params.Get("id")
+func DeleteUser(gin *gin.Context) {
+	id, ok := gin.Params.Get("id")
 	if !ok {
 		response.Failed(&response.INVALID_PARAM)
 		return
 	}
 	service.DeleteUser(id)
-	response.Success()
+	gin.JSON(200, response.Success())
 }
 
 // 查询用户
-func SelectUser(c *gin.Context) {
+func SelectUser(gin *gin.Context) {
 	var param model.User
-	c.BindJSON(&param)
-	response.SuccessReturn(service.FindUserByNameLike(param.Name))
+	gin.BindJSON(&param)
+	gin.JSON(200, response.SuccessReturn(service.FindUserByNameLike(param.Name)))
 }
