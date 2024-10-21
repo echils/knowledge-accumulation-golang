@@ -9,7 +9,9 @@ import (
 // 配置文件默认路径
 const defaultConfigFile = "./configs/app.yaml"
 
-// GOLEARN
+// @title Golearn
+// @version 1.0
+// @description Go语言编程学习和应用
 func main() {
 
 	//加载配置文件

@@ -1,0 +1,43 @@
+definitions:
+  response.ResultData:
+    properties:
+      code:
+        type: integer
+      data: {}
+      msg:
+        type: string
+      pageIndex:
+        type: integer
+      pageSize:
+        type: integer
+      total:
+        type: integer
+    type: object
+info:
+  contact: {}
+  description: Go语言编程学习和应用
+  title: Golearn
+  version: "1.0"
+paths:
+  /api/v1/user/create:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户名称
+        in: body
+        name: name
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/response.ResultData'
+      summary: 创建用户
+      tags:
+      - 用户管理
+swagger: "2.0"

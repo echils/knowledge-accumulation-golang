@@ -10,15 +10,21 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path"
 	"strconv"
+	"syscall"
 	"time"
+
+	_ "golearn/api"
 
 	"github.com/gin-gonic/gin"
 	logC "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/redis/go-redis/v9"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/swaggo/gin-swagger/swaggerFiles"
 	"gopkg.in/yaml.v2"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -26,10 +32,10 @@ import (
 )
 
 // 启动服务
-func Run(path string) (config Config, err error) {
+func Run(path string) {
 
 	//读取配置文件
-	config, err = loadConfigFile(path)
+	config, err := loadConfigFile(path)
 	if err != nil {
 		panic(fmt.Errorf("fatal error when load config file: %w", err))
 	}
@@ -46,7 +52,7 @@ func Run(path string) (config Config, err error) {
 		panic(fmt.Errorf("fatal error when connect redis: %w", err))
 	}
 
-	//启动服务
+	//服务启动准备
 	gin.ForceConsoleColor()
 	gin.SetMode(config.Server.Mode)
 
@@ -62,25 +68,45 @@ func Run(path string) (config Config, err error) {
 	}
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
-		Handler: engine,
+		Addr:         fmt.Sprintf(":%s", port),
+		Handler:      engine,
+		ReadTimeout:  config.Server.ReadTime,
+		WriteTimeout: config.Server.WriteTime,
 	}
 
 	log.Printf("Start application with profile [%s] and port [%s] \n", config.Server.Mode, port)
-	err = server.ListenAndServe()
-	if err != nil {
-		panic(fmt.Errorf("start application occur error when listen sever: %v", err))
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			panic(fmt.Errorf("start application occur error when listen sever: %v", err))
+		}
+	}()
+
+	//优雅关机
+	quit := make(chan os.Signal, 10)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Application start to shutdown...")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatal("Application shutdown occur error:", err)
 	}
-	return config, nil
+	log.Println("Application start to shutdown completed")
 }
 
 // 加载路由
 func loadRouteConfig(e *gin.Engine) {
+
 	group := e.Group("/api/v1")
 	group.POST("/user/create", controller.CreateUser)
 	group.PUT("/user/:id/update", controller.UpdateUser)
 	group.DELETE("/user/:id/delete", controller.DeleteUser)
 	group.GET("/user/list", controller.SelectUser)
+
+	//swagger
+	swaggerGroup := e.Group("swagger")
+	swaggerGroup.GET("/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
 // 加载配置文件
@@ -138,7 +164,7 @@ func globalException() gin.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				log.Fatalln("System occur error: ", fmt.Sprintf("%v", err))
-				response.Failed(&response.DEFAULT_ERROR)
+				response.Failed(c, &response.DEFAULT_ERROR)
 				return
 			}
 		}()
@@ -223,9 +249,11 @@ type Log struct {
 
 // 获取Server配置
 type Server struct {
-	Name string `yaml:"name"`
-	Port int    `yaml:"port"`
-	Mode string `yaml:"mode"`
+	Name      string        `yaml:"name"`
+	Port      int           `yaml:"port"`
+	Mode      string        `yaml:"mode"`
+	ReadTime  time.Duration `yaml:"read-time"`
+	WriteTime time.Duration `yaml:"write-time"`
 }
 
 // 获取MySQL配置

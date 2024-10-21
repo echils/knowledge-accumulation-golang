@@ -1,7 +1,9 @@
 server:
   name: golearn
-  port: 8081
+  port: 8006
   mode: release
+  read-time: 60
+  write-time: 60
 
 log:
   dir: /log

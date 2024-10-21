@@ -1,5 +1,7 @@
 package response
 
+import "github.com/gin-gonic/gin"
+
 // 响应体包装类
 type ResultData struct {
 	Code      int         `json:"code"`
@@ -10,15 +12,17 @@ type ResultData struct {
 	PageSize  int         `json:"pageSize"`
 }
 
-func Success() (result ResultData) {
-	return ResultData{Code: 0, Data: nil, Msg: "成功"}
+func Success(gin *gin.Context) {
+	SuccessReturn(gin, nil)
 }
-func SuccessReturn(data interface{}) (result ResultData) {
-	return ResultData{Code: 0, Data: data, Msg: "成功"}
+
+func SuccessReturn(gin *gin.Context, data interface{}) {
+	gin.JSON(200, ResultData{Code: 0, Data: data, Msg: "成功"})
 }
-func Failed(error *ErrorCode) (result ResultData) {
+
+func Failed(gin *gin.Context, error *ErrorCode) {
 	if error == nil {
 		error = &DEFAULT_ERROR
 	}
-	return ResultData{Code: error.Code, Msg: error.Msg}
+	gin.JSON(500, ResultData{Code: 0, Msg: error.Msg})
 }

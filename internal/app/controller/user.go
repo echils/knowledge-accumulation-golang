@@ -8,41 +8,47 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 创建用户
+// @Summary 创建用户
+// @tags 用户管理
+// @Accept application/json
+// @Produce application/json
+// @Param name body string true "用户名称"
+// @Success 200 {object} response.ResultData "成功"
+// @Router /api/v1/user/create [post]
 func CreateUser(gin *gin.Context) {
 	var param model.User
 	gin.BindJSON(&param)
 	service.CreateUser(&param)
-	gin.JSON(200, response.Success())
+	response.Success(gin)
 }
 
 // 更新用户
 func UpdateUser(gin *gin.Context) {
 	id, ok := gin.Params.Get("id")
 	if !ok {
-		response.Failed(&response.INVALID_PARAM)
+		response.Failed(gin, &response.INVALID_PARAM)
 		return
 	}
 	var param model.User
 	gin.BindJSON(&param)
 	service.UpdateUser(id, &param)
-	gin.JSON(200, response.Success())
+	response.Success(gin)
 }
 
 // 删除用户
 func DeleteUser(gin *gin.Context) {
 	id, ok := gin.Params.Get("id")
 	if !ok {
-		response.Failed(&response.INVALID_PARAM)
+		response.Failed(gin, &response.INVALID_PARAM)
 		return
 	}
 	service.DeleteUser(id)
-	gin.JSON(200, response.Success())
+	response.Success(gin)
 }
 
 // 查询用户
 func SelectUser(gin *gin.Context) {
 	var param model.User
 	gin.BindJSON(&param)
-	gin.JSON(200, response.SuccessReturn(service.FindUserByNameLike(param.Name)))
+	response.SuccessReturn(gin, service.FindUserByNameLike(param.Name))
 }
